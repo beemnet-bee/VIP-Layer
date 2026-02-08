@@ -1,6 +1,5 @@
-
 {
-  "name": "Virtue Health Intelligence Layer",
+  "name": "Virtue Health Intelligence Layer 2.0",
   "description": "An agentic IDP system for NGO healthcare planning, identifying medical deserts through unstructured report parsing and intelligent synthesis.",
   "requestFramePermissions": [
     "camera",

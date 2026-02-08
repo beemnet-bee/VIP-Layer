@@ -1,17 +1,18 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as L from 'leaflet';
-import { MedicalDesert } from '../types';
+import { MedicalDesert, HospitalReport } from '../types';
 
 interface Props {
   deserts: MedicalDesert[];
+  hospitals?: HospitalReport[];
   selectedDesertId?: string | null;
   onDesertClick?: (desert: MedicalDesert) => void;
   onClearSelection?: () => void;
   theme?: 'dark' | 'light';
 }
 
-const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick, onClearSelection, theme = 'dark' }) => {
+const RegionalMap: React.FC<Props> = ({ deserts, hospitals = [], selectedDesertId, onDesertClick, onClearSelection, theme = 'dark' }) => {
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -27,7 +28,6 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Initialize map
     const map = L.map(mapContainerRef.current, {
       zoomControl: false,
       attributionControl: false,
@@ -36,17 +36,14 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // Clear selection on background click
     map.on('click', (e) => {
       if (onClearSelection) onClearSelection();
     });
 
-    // Initial size fix
     setTimeout(() => {
       map.invalidateSize();
     }, 100);
 
-    // Handle map resize
     const resizeObserver = new ResizeObserver(() => {
       map.invalidateSize();
     });
@@ -61,7 +58,6 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
     };
   }, []);
 
-  // Update Tile Layer when theme changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -88,83 +84,76 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
 
     layerGroup.clearLayers();
     
+    // Render Deserts (Clusters)
     deserts.forEach((desert) => {
       const isSelected = desert.id === selectedDesertId;
       const isSevere = desert.severity > 85;
-      const color = isSevere ? '#f43f5e' : '#10b981';
-      const glow = isSevere ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.4)';
-      const activeGlow = isSevere ? 'rgba(244, 63, 94, 0.8)' : 'rgba(16, 185, 129, 0.8)';
+      const color = isSevere ? '#f43f5e' : '#fbbf24';
+      const glow = isSevere ? 'rgba(244, 63, 94, 0.4)' : 'rgba(251, 191, 36, 0.4)';
 
       const circle = L.circleMarker([desert.coordinates[0], desert.coordinates[1]], {
         radius: isSelected ? Math.max(12, (desert.severity / 100) * 45) : Math.max(12, (desert.severity / 100) * 30),
         fillColor: color,
         color: isSelected ? '#fff' : color,
         weight: isSelected ? 2 : 1,
-        opacity: isSelected ? 0.8 : 0.4,
-        fillOpacity: isSelected ? 0.3 : 0.15,
+        opacity: isSelected ? 0.8 : 0.3,
+        fillOpacity: isSelected ? 0.3 : 0.1,
       });
 
       const icon = L.divIcon({
         className: 'custom-div-icon',
         html: `
-          <div style="position: relative; cursor: pointer;">
-            ${isSelected ? `
-              <div style="
-                position: absolute;
-                top: 50%; left: 50%;
-                transform: translate(-50%, -50%);
-                width: 40px; height: 40px;
-                background: ${activeGlow};
-                border-radius: 50%;
-                filter: blur(8px);
-                animation: activeSelectionPulse 1.5s infinite ease-out;
-              "></div>
-            ` : ''}
-            <div style="
-              width: ${isSelected ? '20px' : '14px'}; 
-              height: ${isSelected ? '20px' : '14px'}; 
-              background: ${color}; 
-              border-radius: 50%; 
-              border: 2px solid white;
-              box-shadow: 0 0 ${isSelected ? '30px' : '20px'} ${isSelected ? activeGlow : glow};
-              animation: mapPulse 2s infinite ease-in-out;
-              transition: all 0.3s ease;
-            "></div>
+          <div style="width: 14px; height: 14px; background: ${color}; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px ${glow};"></div>
+        `,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      const marker = L.marker([desert.coordinates[0], desert.coordinates[1]], { icon });
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (onDesertClick) onDesertClick(desert);
+        map.flyTo([desert.coordinates[0], desert.coordinates[1]], 11, { duration: 1.2 });
+      });
+
+      layerGroup.addLayer(circle);
+      layerGroup.addLayer(marker);
+    });
+
+    // Render Hospitals (Nodes)
+    hospitals.forEach((h) => {
+      if (!h.coordinates) return;
+      const color = '#10b981';
+      const glow = 'rgba(16, 185, 129, 0.5)';
+
+      const hIcon = L.divIcon({
+        className: 'hospital-marker',
+        html: `
+          <div style="position: relative;">
+            <div style="position: absolute; inset: -10px; background: ${glow}; filter: blur(8px); border-radius: 50%; animation: pulse 2s infinite;"></div>
+            <div style="width: 12px; height: 12px; background: ${color}; border-radius: 2px; border: 1.5px solid white; transform: rotate(45deg); position: relative; z-index: 1;"></div>
           </div>
           <style>
-            @keyframes mapPulse {
-              0% { transform: scale(1); box-shadow: 0 0 5px ${glow}; }
-              50% { transform: scale(1.4); box-shadow: 0 0 25px ${glow}; }
-              100% { transform: scale(1); box-shadow: 0 0 5px ${glow}; }
-            }
-            @keyframes activeSelectionPulse {
-              0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
-              100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+            @keyframes pulse {
+              0% { transform: scale(0.8); opacity: 0.5; }
+              50% { transform: scale(1.5); opacity: 0.2; }
+              100% { transform: scale(0.8); opacity: 0.5; }
             }
           </style>
         `,
-        iconSize: isSelected ? [20, 20] : [14, 14],
-        iconAnchor: isSelected ? [10, 10] : [7, 7]
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
       });
 
-      const coreMarker = L.marker([desert.coordinates[0], desert.coordinates[1]], { icon });
-
-      const handleClick = (e: L.LeafletMouseEvent) => {
-        L.DomEvent.stopPropagation(e);
-        if (onDesertClick) onDesertClick(desert);
-        map.flyTo([desert.coordinates[0], desert.coordinates[1]], 11, {
-          duration: 1.5,
-          easeLinearity: 0.25
-        });
-      };
-
-      coreMarker.on('click', handleClick);
-      circle.on('click', handleClick);
-
-      layerGroup.addLayer(circle);
-      layerGroup.addLayer(coreMarker);
+      const hMarker = L.marker([h.coordinates[0], h.coordinates[1]], { icon: hIcon });
+      hMarker.bindTooltip(`<div class="font-black uppercase text-[10px] tracking-widest p-1">${h.facilityName}</div>`, {
+        direction: 'top',
+        className: 'custom-tooltip glass-card border-none text-white'
+      });
+      layerGroup.addLayer(hMarker);
     });
-  }, [deserts, selectedDesertId, onDesertClick]);
+
+  }, [deserts, hospitals, selectedDesertId, onDesertClick]);
 
   return (
     <div className="w-full h-full relative group" style={{ minHeight: '400px' }}>
@@ -180,37 +169,31 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Satellite Link</p>
           <p className="text-xs font-black text-emerald-400 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            GHANA_NORTH_NODE_V4
+            SYNC_GH_NODES_01
           </p>
           <button 
             onClick={(e) => { e.stopPropagation(); resetView(); }}
             className="mt-3 w-full py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[8px] font-black text-slate-400 uppercase tracking-widest transition-all pointer-events-auto"
           >
-            Reset Matrix View
+            Reset View
           </button>
         </div>
 
         <div className="glass-card p-4 rounded-2xl border-white/5 backdrop-blur-xl space-y-3">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Inference Legend</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Logic Layers</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-rose-500 border border-white/20"></div>
-              <span className="text-[10px] font-bold text-slate-300">Critical Desert (85%)</span>
+              <span className="text-[10px] font-bold text-slate-300">Severe Desert</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white/20"></div>
-              <span className="text-[10px] font-bold text-slate-300">Vulnerable Area</span>
+              <div className="w-3 h-3 rounded-sm bg-emerald-500 border border-white/20 rotate-45"></div>
+              <span className="text-[10px] font-bold text-slate-300">Active Hospital</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-8 right-8 z-[500] pointer-events-none">
-        <div className="glass-card p-4 rounded-2xl border-white/10 text-right backdrop-blur-xl">
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Scan Area</p>
-          <p className="text-[10px] font-black text-white">238,533 km²</p>
-          <div className="h-1 w-24 bg-white/5 mt-2 rounded-full overflow-hidden">
-            <div className="h-full w-2/3 bg-emerald-500/50"></div>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-amber-400 border border-white/20"></div>
+              <span className="text-[10px] font-bold text-slate-300">Resource Gap Cluster</span>
+            </div>
           </div>
         </div>
       </div>

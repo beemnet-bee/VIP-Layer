@@ -16,22 +16,24 @@
             --bg-deep: #06080a;
             --accent-emerald: #10b981;
             --accent-blue: #3b82f6;
-            --border-subtle: rgba(255, 255, 255, 0.04);
+            --border-subtle: rgba(255, 255, 255, 0.06);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --card-bg: rgba(255, 255, 255, 0.01);
+            --card-bg: rgba(255, 255, 255, 0.02);
             --sidebar-bg: #06080a;
             --header-bg: rgba(6, 8, 10, 0.8);
+            --input-bg: rgba(255, 255, 255, 0.03);
         }
 
         body.light {
-            --bg-deep: #f8fafc;
+            --bg-deep: #f1f5f9;
             --text-main: #0f172a;
             --text-muted: #475569;
-            --border-subtle: rgba(0, 0, 0, 0.06);
-            --card-bg: rgba(255, 255, 255, 0.8);
+            --border-subtle: rgba(0, 0, 0, 0.1);
+            --card-bg: rgba(255, 255, 255, 0.95);
             --sidebar-bg: #ffffff;
-            --header-bg: rgba(255, 255, 255, 0.85);
+            --header-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: rgba(0, 0, 0, 0.05);
         }
 
         body { 
@@ -76,8 +78,8 @@
             position: fixed;
             inset: 0;
             background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+                linear-gradient(rgba(128, 128, 128, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(128, 128, 128, 0.02) 1px, transparent 1px);
             background-size: 60px 60px;
             z-index: -2;
             pointer-events: none;
@@ -105,11 +107,14 @@
             background: var(--card-bg);
             backdrop-filter: blur(25px);
             border: 1px solid var(--border-subtle);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         }
 
         body:not(.light) .glass-card {
             box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.6);
+        }
+        
+        body.light .glass-card {
+            box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
         }
 
         .sidebar-glow {
@@ -162,13 +167,30 @@
             width: 100%;
         }
         
-        /* Map tiles should maintain theme clarity without forced inverted filters */
         .leaflet-tile-pane {
             transition: filter 0.3s ease;
         }
 
         .leaflet-control-attribution {
             display: none !important;
+        }
+
+        /* Leaflet Tooltip Custom Styling */
+        .custom-tooltip {
+            background: var(--sidebar-bg) !important;
+            border: 1px solid rgba(16, 185, 129, 0.3) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+            border-radius: 12px !important;
+            color: var(--text-main) !important;
+            padding: 8px 12px !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+        .leaflet-tooltip-top:before {
+            border-top-color: var(--sidebar-bg) !important;
+        }
+        
+        body.light .custom-tooltip {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
         }
     </style>
 <script type="importmap">
@@ -187,7 +209,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="antialiased selection:bg-emerald-500/30 selection:text-emerald-200 overflow-hidden relative">
     <div class="bg-glow-1"></div>
@@ -201,6 +222,5 @@
     
     <div class="scanline"></div>
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>

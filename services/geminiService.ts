@@ -15,59 +15,51 @@ export const runDiscoveryAgent = async (region: string = "Ghana") => {
     model: 'gemini-3-flash-preview',
     contents: `DISCOVERY_AGENT: Search the internet for real, recent reports (2024-2025) concerning health facility capabilities, equipment status (oxygen plants, dialysis, MRI, etc.), and staffing shortages in ${region}. 
     Provide a list of at least 5 real hospitals or health centers with specific, currently reported challenges.
-    The response MUST be a structured list matching our schema.`,
+    
+    Format the output as a JSON array of objects. Each object MUST strictly follow this schema:
+    [{
+      "facilityName": string,
+      "region": string,
+      "reportDate": string,
+      "unstructuredText": string (detailed summary),
+      "coordinates": [number, number] (latitude, longitude),
+      "extractedData": {
+        "beds": number,
+        "specialties": string[],
+        "equipmentList": [{"name": string, "status": "Operational" | "Limited" | "Offline"}],
+        "gaps": string[],
+        "verified": boolean,
+        "confidence": number
+      }
+    }]`,
     config: {
       tools: [{ googleSearch: {} }],
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            facilityName: { type: Type.STRING },
-            region: { type: Type.STRING },
-            reportDate: { type: Type.STRING },
-            unstructuredText: { type: Type.STRING, description: "A detailed summary of the findings from the web search." },
-            coordinates: { 
-              type: Type.ARRAY, 
-              items: { type: Type.NUMBER },
-              description: "[latitude, longitude]" 
-            },
-            extractedData: {
-              type: Type.OBJECT,
-              properties: {
-                beds: { type: Type.INTEGER },
-                specialties: { type: Type.ARRAY, items: { type: Type.STRING } },
-                equipmentList: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      name: { type: Type.STRING },
-                      status: { type: Type.STRING }
-                    }
-                  }
-                },
-                gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-                verified: { type: Type.BOOLEAN },
-                confidence: { type: Type.NUMBER }
-              }
-            }
-          }
-        }
-      }
+      // Note: responseMimeType is not used here to avoid conflict with grounding tool
     }
   });
 
-  // Since response.text might contain markdown formatting around the JSON, we sanitize it
   const rawText = response.text || "[]";
-  const jsonStr = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-  
-  return {
-    data: JSON.parse(jsonStr),
-    grounding: response.candidates?.[0]?.groundingMetadata?.groundingChunks,
-    metrics: getSimulatedMetrics()
-  };
+  // Manual extraction of JSON from response text as Search Grounding might wrap it
+  let cleanedJson = rawText;
+  const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+  if (jsonMatch) {
+    cleanedJson = jsonMatch[0];
+  } else {
+    // If no array found, try to find an object and wrap it
+    const objMatch = rawText.match(/\{[\s\S]*\}/);
+    if (objMatch) cleanedJson = `[${objMatch[0]}]`;
+  }
+
+  try {
+    return {
+      data: JSON.parse(cleanedJson),
+      grounding: response.candidates?.[0]?.groundingMetadata?.groundingChunks,
+      metrics: getSimulatedMetrics()
+    };
+  } catch (e) {
+    console.error("Failed to parse Discovery Agent output:", rawText);
+    return { data: [], metrics: getSimulatedMetrics() };
+  }
 };
 
 // Specialist 1: Intelligent Document Parser (IDP)
@@ -131,17 +123,13 @@ export const runVerifierAgent = async (structuredData: any, rawText: string) => 
 // Specialist 3: Strategic Regional Planner
 export const runStrategistAgent = async (allReports: any[], location?: { lat: number, lng: number }) => {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash', 
+    model: 'gemini-3-flash-preview', 
     contents: `STRATEGIST_AGENT: Analyze regional medical deserts in Ghana.
     Find actual distances to nearest hubs for these facilities: ${allReports.map(r => r.facilityName).join(', ')}.
-    Synthesize a 12-month resource allocation plan based on infrastructure gaps and distances.`,
+    Synthesize a 12-month resource allocation plan based on infrastructure gaps and distances.
+    Present your findings with Markdown tables and clear headings.`,
     config: {
-      tools: [{ googleMaps: {} }, { googleSearch: {} }],
-      toolConfig: {
-        retrievalConfig: {
-          latLng: location ? { latitude: location.lat, longitude: location.lng } : undefined
-        }
-      }
+      tools: [{ googleSearch: {} }],
     }
   });
   

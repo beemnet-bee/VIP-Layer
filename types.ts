@@ -5,16 +5,37 @@ export interface HospitalReport {
   region: string;
   reportDate: string;
   unstructuredText: string;
-  coordinates?: [number, number]; // Added for geographic filtering
+  coordinates?: [number, number];
+  anomalies?: {
+    type: 'conflicting_data' | 'unverified_claim' | 'outdated_metrics';
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+  }[];
   extractedData?: {
     beds: number;
     specialties: string[];
     equipment: string[];
-    equipmentList: { name: string; status: 'Operational' | 'Limited' | 'Offline' }[]; // Detailed list
+    equipmentList: { name: string; status: 'Operational' | 'Limited' | 'Offline' }[];
     gaps: string[];
     verified: boolean;
     confidence: number;
   };
+}
+
+export interface UserProject {
+  id: string;
+  name: string;
+  createdAt: string;
+  documents: string[];
+  reports: HospitalReport[];
+  analysisResult?: string;
+  placements?: {
+    id: string;
+    facilityName: string;
+    role: string;
+    priority: 'Critical' | 'High' | 'Routine';
+    status: 'Planned' | 'Deployed' | 'Completed';
+  }[];
 }
 
 export interface MedicalDesert {
@@ -22,7 +43,7 @@ export interface MedicalDesert {
   region: string;
   populationDensity: 'High' | 'Medium' | 'Low';
   primaryGaps: string[];
-  severity: number; // 0-100
+  severity: number;
   coordinates: [number, number];
   predictedRisk: number;
   predictiveGaps: string[];
@@ -38,9 +59,9 @@ export interface AgentStep {
   description?: string;
   metadata?: any;
   metrics?: {
-    executionTime: number; // ms
-    successRate: number; // 0-1
-    hallucinationScore: number; // 0-1 (lower is better)
+    executionTime: number;
+    successRate: number;
+    hallucinationScore: number;
   };
   detailedLogs?: string[];
   intermediateOutput?: any;
@@ -54,7 +75,7 @@ export interface AuditLog {
   status: 'success' | 'warning' | 'info';
 }
 
-export type ViewState = 'dashboard' | 'map' | 'analysis' | 'audit' | 'simulation';
+export type ViewState = 'dashboard' | 'map' | 'analysis' | 'audit' | 'simulation' | 'workspace' | 'matching' | 'integrity';
 
 export interface AgentState {
   steps: AgentStep[];
