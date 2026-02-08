@@ -195,7 +195,7 @@ const RegionalMap: React.FC<Props> = ({ deserts, selectedDesertId, onDesertClick
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-rose-500 border border-white/20"></div>
-              <span className="text-[10px] font-bold text-slate-300">Critical Desert (>85%)</span>
+              <span className="text-[10px] font-bold text-slate-300">Critical Desert (85%)</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white/20"></div>
