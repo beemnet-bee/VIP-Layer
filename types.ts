@@ -22,6 +22,13 @@ export interface HospitalReport {
   };
 }
 
+export interface AnalysisHistoryEntry {
+  id: string;
+  timestamp: string;
+  plan: string;
+  steps: AgentStep[];
+}
+
 export interface UserProject {
   id: string;
   name: string;
@@ -29,6 +36,7 @@ export interface UserProject {
   documents: string[];
   reports: HospitalReport[];
   analysisResult?: string;
+  analysisHistory?: AnalysisHistoryEntry[];
   placements?: {
     id: string;
     facilityName: string;

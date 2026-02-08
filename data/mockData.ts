@@ -29,7 +29,19 @@ export const GHANA_HOSPITALS: HospitalReport[] = [
     region: 'Northern',
     reportDate: '2025-06-01',
     coordinates: [9.4007, -0.8393],
-    unstructuredText: 'Critical shortage of ventilators. We have 3 but 2 are broken. Serving a population of 1M+. Neonatal unit is overcrowded.',
+    unstructuredText: 'Critical shortage of ventilators. We have 3 but 2 are broken. Serving a population of 1M+. Neonatal unit is overcrowded. Water treatment plant showing critical error logs.',
+    anomalies: [
+      {
+        type: 'unverified_claim',
+        description: 'Facility claims high ICU capacity but power backup systems are reported as "Offline".',
+        severity: 'high'
+      },
+      {
+        type: 'conflicting_data',
+        description: 'Neonatal metrics conflict with reported nurse-to-patient ratios.',
+        severity: 'medium'
+      }
+    ],
     extractedData: {
       beds: 400,
       specialties: ['Pediatrics', 'Obstetrics'],
@@ -37,7 +49,8 @@ export const GHANA_HOSPITALS: HospitalReport[] = [
       equipmentList: [
         { name: 'Ventilators', status: 'Limited' },
         { name: 'X-ray', status: 'Operational' },
-        { name: 'Oxygen Plant', status: 'Offline' }
+        { name: 'Oxygen Plant', status: 'Offline' },
+        { name: 'Water Treatment', status: 'Offline' }
       ],
       gaps: ['NICU capacity', 'Equipment maintenance'],
       verified: true,
@@ -51,6 +64,13 @@ export const GHANA_HOSPITALS: HospitalReport[] = [
     reportDate: '2025-06-10',
     coordinates: [6.3248, -2.4833],
     unstructuredText: 'Rural outpost. No stable internet. We have basic surgical kits but no anesthesia machine. Transporting patients takes 6 hours to nearest hub.',
+    anomalies: [
+      {
+        type: 'outdated_metrics',
+        description: 'Staffing numbers have not been updated since Q3 2024.',
+        severity: 'low'
+      }
+    ],
     extractedData: {
       beds: 50,
       specialties: ['General Medicine'],
