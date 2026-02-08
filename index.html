@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Layer | Health Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        :root {
+            --bg-deep: #06080a;
+            --accent-emerald: #10b981;
+            --accent-blue: #3b82f6;
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(255, 255, 255, 0.01);
+            --sidebar-bg: #06080a;
+            --header-bg: rgba(6, 8, 10, 0.8);
+        }
+
+        body.light {
+            --bg-deep: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --sidebar-bg: #ffffff;
+            --header-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Animated Background Elements */
+        .bg-glow-1 {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.07) 0%, transparent 70%);
+            z-index: -1;
+            animation: move-glow 25s linear infinite alternate;
+            pointer-events: none;
+        }
+        .bg-glow-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 70%;
+            height: 70%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
+            z-index: -1;
+            animation: move-glow 30s linear infinite alternate-reverse;
+            pointer-events: none;
+        }
+        @keyframes move-glow {
+            from { transform: translate(-5vw, -5vh); }
+            to { transform: translate(15vw, 15vh); }
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Floating Bokeh particles */
+        .floating-blob {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: -1;
+            animation: float-up 10s linear infinite;
+        }
+
+        @keyframes float-up {
+            from { transform: translateY(100vh) scale(1); opacity: 0; }
+            50% { opacity: 0.2; }
+            to { transform: translateY(-10vh) scale(2); opacity: 0; }
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        body:not(.light) .glass-card {
+            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .sidebar-glow {
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.05);
+        }
+        
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.2);
+            border-radius: 10px;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        .animate-spin-slow {
+            animation: spin 12s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scanline {
+            width: 100%;
+            height: 150px;
+            z-index: 9999;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(16, 185, 129, 0.03) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.15;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 12s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -150px; }
+        }
+
+        .leaflet-container {
+            background: var(--bg-deep) !important;
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* Map tiles should maintain theme clarity without forced inverted filters */
+        .leaflet-tile-pane {
+            transition: filter 0.3s ease;
+        }
+
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+    "d3": "https://esm.sh/d3@^7.9.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "leaflet": "https://esm.sh/leaflet@^1.9.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+</head>
+<body class="antialiased selection:bg-emerald-500/30 selection:text-emerald-200 overflow-hidden relative">
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+    <div class="bg-grid"></div>
+    <!-- Particles -->
+    <div class="floating-blob" style="left: 10%; animation-duration: 15s; animation-delay: 2s;"></div>
+    <div class="floating-blob" style="left: 30%; animation-duration: 12s; animation-delay: 5s;"></div>
+    <div class="floating-blob" style="left: 55%; animation-duration: 18s; animation-delay: 0s;"></div>
+    <div class="floating-blob" style="left: 80%; animation-duration: 14s; animation-delay: 8s;"></div>
+    
+    <div class="scanline"></div>
+    <div id="root"></div>
+</body>
+</html>
